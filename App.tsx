@@ -56,10 +56,10 @@ const App: React.FC = () => {
       localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(decks));
   };
 
-  const handleGenerate = async (text: string, images: File[]) => {
+  const handleGenerate = async (text: string, images: File[], apiKey: string) => {
     setIsGenerating(true);
     try {
-      const newDeck = await generateFlashcards(text, images);
+      const newDeck = await generateFlashcards(text, images, apiKey);
       
       // Add to library at the beginning
       const updatedLibrary = [newDeck, ...library];
@@ -70,7 +70,8 @@ const App: React.FC = () => {
       setActiveDeck(newDeck);
       setView('study');
     } catch (error) {
-      alert("Failed to generate flashcards. Please check your API Key or try again.");
+      console.error(error);
+      alert("Failed to generate flashcards. Please check your API Key and try again.");
     } finally {
       setIsGenerating(false);
     }

@@ -1,15 +1,21 @@
-import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { UploadCloud, FileText, Image as ImageIcon, Loader2, Key } from 'lucide-react';
 
 interface FileUploadProps {
-  onGenerate: (text: string, images: File[]) => Promise<void>;
+  onGenerate: (text: string, images: File[], apiKey: string) => Promise<void>;
   isGenerating: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ onGenerate, isGenerating }) => {
   const [text, setText] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) setApiKey(savedKey);
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -19,8 +25,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onGenerate, isGenerating }) => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text && images.length === 0) return;
-    await onGenerate(text, images);
+    if ((!text && images.length === 0) || !apiKey) return;
+    
+    // Save key for future use
+    localStorage.setItem('gemini_api_key', apiKey);
+    
+    await onGenerate(text, images, apiKey);
   };
 
   return (
@@ -36,6 +46,24 @@ const FileUpload: React.FC<FileUploadProps> = ({ onGenerate, isGenerating }) => 
 
         <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-slate-100">
             
+            {/* API Key Input */}
+            <div className="mb-6">
+                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    <Key className="w-4 h-4" /> Gemini API Key
+                </label>
+                <input
+                    type="password"
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                    placeholder="Enter your Gemini API Key"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    required
+                />
+                <p className="text-xs text-slate-400 mt-2">
+                    Key is stored locally in your browser. Get one at <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-indigo-500 hover:underline">aistudio.google.com</a>.
+                </p>
+            </div>
+
             {/* Text Area */}
             <div className="mb-6">
                 <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
@@ -80,9 +108,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onGenerate, isGenerating }) => 
             {/* Submit Button */}
             <button
                 type="submit"
-                disabled={isGenerating || (!text && images.length === 0)}
+                disabled={isGenerating || (!text && images.length === 0) || !apiKey}
                 className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-all ${
-                    isGenerating 
+                    isGenerating || !apiKey
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
                     : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 hover:-translate-y-0.5'
                 }`}

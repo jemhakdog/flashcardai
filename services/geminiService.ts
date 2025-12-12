@@ -7,14 +7,15 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const generateFlashcards = async (
   content: string, 
-  images: File[] = []
+  images: File[] = [],
+  apiKey: string
 ): Promise<Deck> => {
   
-  if (!process.env.API_KEY) {
-    throw new Error("API Key is missing. Please set it in the environment.");
+  if (!apiKey) {
+    throw new Error("API Key is missing.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   
   const systemInstruction = 
     "You are an expert tutor. Create a set of flashcards from the provided text or images. " +
