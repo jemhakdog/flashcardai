@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import FileUpload from './components/FileUpload';
 import StudySession from './components/StudySession';
 import Library from './components/Library';
+import SettingsModal from './components/SettingsModal';
 import { generateFlashcards } from './services/geminiService';
 import { Deck, Flashcard } from './types';
-import { BrainCircuit, Book, Plus } from 'lucide-react';
+import { BrainCircuit, Book, Plus, Settings } from 'lucide-react';
 
 const LIBRARY_STORAGE_KEY = 'smart_flashcards_library';
 const LEGACY_STORAGE_KEY = 'smart_flashcards_deck';
@@ -16,6 +17,7 @@ const App: React.FC = () => {
   const [activeDeck, setActiveDeck] = useState<Deck | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [view, setView] = useState<ViewState>('upload');
+  const [showSettings, setShowSettings] = useState(false);
 
   // Load from local storage on mount
   useEffect(() => {
@@ -56,10 +58,10 @@ const App: React.FC = () => {
       localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(decks));
   };
 
-  const handleGenerate = async (text: string, images: File[]) => {
+  const handleGenerate = async (text: string, files: File[]) => {
     setIsGenerating(true);
     try {
-      const newDeck = await generateFlashcards(text, images);
+      const newDeck = await generateFlashcards(text, files);
       
       // Add to library at the beginning
       const updatedLibrary = [newDeck, ...library];
@@ -71,7 +73,9 @@ const App: React.FC = () => {
       setView('study');
     } catch (error) {
       console.error(error);
-      alert("Failed to generate flashcards. Please check that your API Key is configured in the environment variables and try again.");
+      // If error might be auth related, show settings
+      setShowSettings(true);
+      alert("Failed to generate flashcards. Please ensure your API Key is configured correctly in the environment variables.");
     } finally {
       setIsGenerating(false);
     }
@@ -141,6 +145,14 @@ const App: React.FC = () => {
                     >
                         <Plus className="w-4 h-4" /> <span className="hidden md:inline">Create</span>
                     </button>
+                    <div className="h-6 w-px bg-slate-200 mx-2" />
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                        title="API Settings"
+                    >
+                        <Settings className="w-5 h-5" />
+                    </button>
                 </div>
             </div>
         </nav>
@@ -170,6 +182,8 @@ const App: React.FC = () => {
             />
         )}
       </main>
+
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 };

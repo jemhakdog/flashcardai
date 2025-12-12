@@ -7,7 +7,7 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const generateFlashcards = async (
   content: string, 
-  images: File[] = []
+  files: File[] = []
 ): Promise<Deck> => {
   
   const apiKey = process.env.API_KEY;
@@ -18,7 +18,7 @@ export const generateFlashcards = async (
   const ai = new GoogleGenAI({ apiKey });
   
   const systemInstruction = 
-    "You are an expert tutor. Create a set of flashcards from the provided text or images. " +
+    "You are an expert tutor. Create a set of flashcards from the provided text, images, or documents. " +
     "Focus on key terms, definitions, dates, and core concepts. " +
     "The 'front' should be a question, concept, or term. " +
     "The 'back' should be a concise definition, answer, or explanation.";
@@ -28,20 +28,26 @@ export const generateFlashcards = async (
   // Prepare content parts
   const parts: any[] = [{ text: prompt }];
 
-  // Add text content if provided
+  // Add text input if provided
   if (content.trim()) {
-    parts.push({ text: `Content: ${content}` });
+    parts.push({ text: `Context Note: ${content}` });
   }
 
-  // Process images
-  for (const img of images) {
-    const base64 = await fileToBase64(img);
-    parts.push({
-      inlineData: {
-        mimeType: img.type,
-        data: base64
-      }
-    });
+  // Process files
+  for (const file of files) {
+    if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+        const base64 = await fileToBase64(file);
+        parts.push({
+            inlineData: {
+                mimeType: file.type,
+                data: base64
+            }
+        });
+    } else if (file.type.startsWith('text/')) {
+        // For text files, we read them and append to prompt
+        const textContent = await fileToText(file);
+        parts.push({ text: `File Content (${file.name}):\n${textContent}` });
+    }
   }
 
   // Define Schema
@@ -112,4 +118,13 @@ const fileToBase64 = (file: File): Promise<string> => {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+};
+
+const fileToText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
 };
