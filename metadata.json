@@ -1,0 +1,5 @@
+{
+  "name": "Smart Flashcard AI",
+  "description": "An AI-powered flashcard application that uses Spaced Repetition (SRS) to help you study efficiently in batches.",
+  "requestFramePermissions": []
+}
