@@ -7,12 +7,12 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const generateFlashcards = async (
   content: string, 
-  images: File[] = [],
-  apiKey: string
+  images: File[] = []
 ): Promise<Deck> => {
   
+  const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("API Key is missing.");
+    throw new Error("API Key is missing. Please check your environment variables.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
